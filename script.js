@@ -337,7 +337,7 @@ function renderAdminMedia() {
                     <div class="item-card" onclick="enterCategory('${cat.id}')">
                         <i class="${cat.icon} item-icon"></i>
                         <div class="item-title">${cat.name}</div>
-                        <div class="item-meta">${folders.filter(f => f.categoryId === cat.id).length} Folders</div>
+                        <div class="item-meta">${folders.filter(f => f.category_id === cat.id).length} Folders</div>
                     </div>
                     <div class="item-actions">
                         <button class="btn btn-sm btn-icon-only" onclick="event.stopPropagation(); editItem('category', '${cat.id}')" title="Edit">
@@ -358,7 +358,7 @@ function renderAdminMedia() {
         uploadBtn.classList.add('hidden');
         addFolderBtn.classList.add('hidden');
 
-        const currentFolders = folders.filter(f => f.categoryId === navState.currentCatId);
+        const currentFolders = folders.filter(f => f.category_id === navState.currentCatId);
         if (currentFolders.length === 0) container.innerHTML = '<p class="text-muted">No folders yet.</p>';
 
         currentFolders.forEach(fol => {
@@ -367,7 +367,7 @@ function renderAdminMedia() {
                     <div class="item-card" onclick="enterFolder('${fol.id}')">
                         <i class="fas fa-folder item-icon" style="color:#fbbf24"></i>
                         <div class="item-title">${fol.name}</div>
-                        <div class="item-meta">${files.filter(f => f.folderId === fol.id).length} Files</div>
+                        <div class="item-meta">${files.filter(f => f.folder_id === fol.id).length} Files</div>
                     </div>
                     <div class="item-actions">
                         <button class="btn btn-sm btn-icon-only" onclick="event.stopPropagation(); editItem('folder', '${fol.id}')" title="Edit">
@@ -389,7 +389,7 @@ function renderAdminMedia() {
         uploadBtn.classList.remove('hidden');
         addFolderBtn.classList.remove('hidden');
 
-        const currentFiles = files.filter(f => f.folderId === navState.currentFolId);
+        const currentFiles = files.filter(f => f.folder_id === navState.currentFolId);
         if (currentFiles.length === 0) container.innerHTML = '<p class="text-muted">No files uploaded.</p>';
 
         currentFiles.forEach(file => {
@@ -623,9 +623,6 @@ function handleAddItem() {
     if (!name) return showToast("Please enter a name");
 
     if (navState.view === 'categories') {
-        if (currentUser.level < 2) {
-            return showToast("Only Level 2+ can add categories");
-        }
         const newCat = { id: 'cat_' + Date.now(), name: name, icon: 'fas fa-layer-group' };
         categories.push(newCat);
         api.createCategory(newCat).catch(err => showToast("Error creating category"));
@@ -661,16 +658,17 @@ async function handleFileUpload(input) {
                 const fileId = 'file_' + Date.now() + '_' + i;
                 const fileObj = {
                     id: fileId,
-                    folderId: navState.currentFolId,
+                    folder_id: navState.currentFolId,
+                    category_id: navState.currentCatId,
                     name: file.name,
                     type: file.type,
                     url: e.target.result,
                     thumbnail: e.target.result,
-                    uploadDate: new Date().toISOString(),
+                    upload_date: new Date().toISOString(),
                     likes: 0,
                     tags: '',
                     approved: !needsApproval,
-                    uploadedBy: currentUser.name
+                    uploaded_by: currentUser.name
                 };
 
                 files.push(fileObj);
@@ -910,7 +908,7 @@ function renderPublicContent() {
     } else if (navState.view === 'folders') {
         const cat = categories.find(c => c.id === navState.currentCatId);
         breadcrumbs.innerHTML = `<span onclick="resetPublicView()">Library</span> <span>${cat.name}</span>`;
-        const currentFolders = folders.filter(f => f.categoryId === navState.currentCatId);
+        const currentFolders = folders.filter(f => f.category_id === navState.currentCatId);
         
         currentFolders.forEach(fol => {
             container.innerHTML += `
@@ -924,7 +922,7 @@ function renderPublicContent() {
         const fol = folders.find(f => f.id === navState.currentFolId);
         breadcrumbs.innerHTML = `<span onclick="resetPublicView()">Library</span> <span onclick="publicEnterCategory('${cat.id}')">${cat.name}</span> <span>${fol.name}</span>`;
         
-        const currentFiles = files.filter(f => f.folderId === navState.currentFolId);
+        const currentFiles = files.filter(f => f.folder_id === navState.currentFolId);
         
         // Check if files are audio
         const hasAudio = currentFiles.some(f => getFileType(f) === 'audio');
