@@ -139,7 +139,40 @@ class APIClient {
   async deleteAnnouncement(id) {
     return this.apiCall(`/announcements?id=${id}`, 'DELETE');
   }
-}
+
+  // ========== FEATURED MEDIA ENDPOINTS ==========
+  async getFeaturedMedia() {
+    return this.apiCall('/featured-media', 'GET');
+  }
+
+  async createFeaturedMedia(item) {
+    return this.apiCall('/featured-media', 'POST', item);
+  }
+
+  async updateFeaturedMedia(id, updates) {
+    return this.apiCall('/featured-media', 'PUT', { id, ...updates });
+  }
+
+  async deleteFeaturedMedia(id) {
+    return this.apiCall(`/featured-media?id=${id}`, 'DELETE');
+  }
+
+  // ========== SLIDER IMAGES ENDPOINTS ==========
+  async getSliderImages() {
+    return this.apiCall('/slider-images', 'GET');
+  }
+
+  async createSliderImage(image) {
+    return this.apiCall('/slider-images', 'POST', image);
+  }
+
+  async updateSliderImage(id, updates) {
+    return this.apiCall('/slider-images', 'PUT', { id, ...updates });
+  }
+
+  async deleteSliderImage(id) {
+    return this.apiCall(`/slider-images?id=${id}`, 'DELETE');
+  }
 
 // Initialize API client
 const api = new APIClient();

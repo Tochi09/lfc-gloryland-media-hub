@@ -92,6 +92,18 @@ async function loadFromStorage() {
             if (annResult.data) announcements = annResult.data;
         } catch (e) { console.log('Announcements not available'); }
 
+        // Load featured media from API
+        try {
+            const featResult = await api.getFeaturedMedia();
+            if (featResult.data) featuredMedia = featResult.data;
+        } catch (e) { console.log('Featured media not available'); }
+
+        // Load slider images from API
+        try {
+            const sliderResult = await api.getSliderImages();
+            if (sliderResult.data) sliderImages = sliderResult.data;
+        } catch (e) { console.log('Slider images not available'); }
+
         // Load likes from localStorage (client-side only)
         likedItems = JSON.parse(localStorage.getItem('likedItems') || '{}');
 
@@ -278,24 +290,43 @@ async function uploadHeroImages() {
         return showToast("Please select images to upload");
     }
     
-    for (let i = 0; i < input.files.length; i++) {
-        const file = input.files[i];
-        const reader = new FileReader();
+    try {
+        for (let i = 0; i < input.files.length; i++) {
+            const file = input.files[i];
+            const reader = new FileReader();
+            
+            await new Promise((resolve) => {
+                reader.onload = async function (e) {
+                    const imageObj = { 
+                        id: 'slider_' + Date.now() + i, 
+                        url: e.target.result 
+                    };
+                    sliderImages.push(imageObj);
+                    
+                    // Save to API
+                    try {
+                        await api.createSliderImage(imageObj);
+                    } catch (err) {
+                        console.error('Error saving slider image:', err);
+                        sliderImages = sliderImages.filter(s => s.id !== imageObj.id);
+                        throw err;
+                    }
+                    resolve();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
         
-        await new Promise((resolve) => {
-            reader.onload = async function (e) {
-                sliderImages.push({ id: Date.now() + i, url: e.target.result });
-                resolve();
-            };
-            reader.readAsDataURL(file);
-        });
+        renderHeroImagesList();
+        renderAdminSlider();
+        showToast(`${input.files.length} hero image(s) uploaded!`);
+        input.value = '';
+    } catch (err) {
+        showToast("Error uploading hero images");
+        // Reload from API to get correct state
+        await loadFromStorage();
+        renderHeroImagesList();
     }
-    
-    await saveToStorage('slider_images', sliderImages);
-    renderHeroImagesList();
-    renderAdminSlider();
-    showToast(`${input.files.length} hero image(s) uploaded!`);
-    input.value = '';
 }
 
 async function removeHeroImage(id) {
@@ -305,11 +336,19 @@ async function removeHeroImage(id) {
     
     if (!confirm("Remove this hero image?")) return;
     
-    sliderImages = sliderImages.filter(s => s.id !== id);
-    await saveToStorage('slider_images', sliderImages);
-    renderHeroImagesList();
-    renderAdminSlider();
-    showToast("Hero image removed");
+    try {
+        sliderImages = sliderImages.filter(s => s.id !== id);
+        await api.deleteSliderImage(id);
+        renderHeroImagesList();
+        renderAdminSlider();
+        showToast("Hero image removed");
+    } catch (err) {
+        console.error('Error removing slider image:', err);
+        showToast("Error removing hero image");
+        // Reload from API to get correct state
+        await loadFromStorage();
+        renderHeroImagesList();
+    }
 }
 
 // ========== MEDIA LIBRARY ==========
@@ -1060,28 +1099,44 @@ async function saveFeaturedItem() {
         return showToast("Please provide title and file");
     }
 
-    const reader = new FileReader();
-    reader.onload = async function (e) {
-        const itemId = 'featured_' + Date.now();
-        const item = {
-            id: itemId,
-            title,
-            description: desc,
-            url: e.target.result,
-            tags,
-            likes: 0,
-            uploadDate: new Date().toISOString()
+    try {
+        const reader = new FileReader();
+        reader.onload = async function (e) {
+            const itemId = 'featured_' + Date.now();
+            const item = {
+                id: itemId,
+                title,
+                description: desc,
+                url: e.target.result,
+                tags,
+                likes: 0,
+                upload_date: new Date().toISOString()
+            };
+
+            featuredMedia.push(item);
+            
+            try {
+                await api.createFeaturedMedia(item);
+                renderAdminFeatured();
+                renderFeaturedMedia();
+                showToast("Added to featured!");
+                closeFeaturedModal();
+            } catch (err) {
+                console.error('Error saving featured item:', err);
+                featuredMedia = featuredMedia.filter(f => f.id !== itemId);
+                showToast("Error saving featured item");
+                // Reload from API
+                await loadFromStorage();
+                renderAdminFeatured();
+                renderFeaturedMedia();
+            }
         };
 
-        featuredMedia.push(item);
-        await saveToStorage(itemId, item);
-        renderAdminFeatured();
-        renderFeaturedMedia();
-        showToast("Added to featured!");
-        closeFeaturedModal();
-    };
-
-    reader.readAsDataURL(fileInput.files[0]);
+        reader.readAsDataURL(fileInput.files[0]);
+    } catch (err) {
+        console.error('Error processing file:', err);
+        showToast("Error processing file");
+    }
 }
 
 async function deleteFeatured(id) {
@@ -1091,11 +1146,20 @@ async function deleteFeatured(id) {
     
     if (!confirm("Remove from featured?")) return;
     
-    featuredMedia = featuredMedia.filter(f => f.id !== id);
-    await window.storage.delete(id);
-    renderAdminFeatured();
-    renderFeaturedMedia();
-    showToast("Removed from featured");
+    try {
+        featuredMedia = featuredMedia.filter(f => f.id !== id);
+        await api.deleteFeaturedMedia(id);
+        renderAdminFeatured();
+        renderFeaturedMedia();
+        showToast("Removed from featured");
+    } catch (err) {
+        console.error('Error deleting featured item:', err);
+        showToast("Error deleting featured item");
+        // Reload from API
+        await loadFromStorage();
+        renderAdminFeatured();
+        renderFeaturedMedia();
+    }
 }
 
 // ========== MEDIA DETAIL ==========
