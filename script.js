@@ -722,32 +722,41 @@ async function saveEdit() {
     const newName = document.getElementById('editItemInput').value.trim();
     if (!newName) return showToast("Please enter a name");
 
-    if (editState.type === 'category') {
-        const cat = categories.find(c => c.id === editState.id);
-        if (cat) {
-            cat.name = newName;
-            await saveToStorage('categories', categories);
-            renderAdminMedia();
+    try {
+        if (editState.type === 'category') {
+            const cat = categories.find(c => c.id === editState.id);
+            if (cat) {
+                cat.name = newName;
+                await api.updateCategory(editState.id, { name: newName });
+                renderAdminMedia();
+            }
+        } else if (editState.type === 'folder') {
+            const fol = folders.find(f => f.id === editState.id);
+            if (fol) {
+                fol.name = newName;
+                await api.updateFolder(editState.id, { name: newName });
+                renderAdminMedia();
+            }
+        } else if (editState.type === 'file') {
+            const file = files.find(f => f.id === editState.id);
+            if (file) {
+                file.name = newName;
+                await api.updateFile(editState.id, { name: newName });
+                renderAdminMedia();
+                renderPublicContent();
+            }
         }
-    } else if (editState.type === 'folder') {
-        const fol = folders.find(f => f.id === editState.id);
-        if (fol) {
-            fol.name = newName;
-            await saveToStorage('folders', folders);
-            renderAdminMedia();
-        }
-    } else if (editState.type === 'file') {
-        const file = files.find(f => f.id === editState.id);
-        if (file) {
-            file.name = newName;
-            await saveToStorage(file.id, file);
-            renderAdminMedia();
-            renderPublicContent();
-        }
-    }
 
-    showToast("Updated successfully");
-    closeEditModal();
+        showToast("Updated successfully");
+        closeEditModal();
+    } catch (err) {
+        console.error('Error updating item:', err);
+        showToast("Error updating item");
+        // Reload to get current state from API
+        await loadFromStorage();
+        renderAdminMedia();
+        renderPublicContent();
+    }
 }
 
 function closeEditModal() {
