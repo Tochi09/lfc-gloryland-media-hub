@@ -30,7 +30,7 @@ exports.handler = async (event, context) => {
 
       return {
         statusCode: 200,
-        headers: { 'Access-Control-Allow-Origin': '*' },
+        headers: corsHeaders,
         body: JSON.stringify({ data })
       };
     }
@@ -39,6 +39,7 @@ exports.handler = async (event, context) => {
       if (userLevel < 2) {
         return {
           statusCode: 403,
+          headers: corsHeaders,
           body: JSON.stringify({ error: 'Insufficient permissions' })
         };
       }
@@ -53,7 +54,7 @@ exports.handler = async (event, context) => {
 
       return {
         statusCode: 201,
-        headers: { 'Access-Control-Allow-Origin': '*' },
+        headers: corsHeaders,
         body: JSON.stringify({ data })
       };
     }
@@ -62,6 +63,7 @@ exports.handler = async (event, context) => {
       if (userLevel < 2) {
         return {
           statusCode: 403,
+          headers: corsHeaders,
           body: JSON.stringify({ error: 'Insufficient permissions' })
         };
       }
@@ -76,7 +78,7 @@ exports.handler = async (event, context) => {
 
       return {
         statusCode: 200,
-        headers: { 'Access-Control-Allow-Origin': '*' },
+        headers: corsHeaders,
         body: JSON.stringify({ success: true })
       };
     }

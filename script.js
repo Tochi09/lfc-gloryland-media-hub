@@ -672,7 +672,14 @@ async function handleFileUpload(input) {
                 };
 
                 files.push(fileObj);
-                await saveToStorage(fileId, fileObj);
+                // Save to API (Supabase)
+                try {
+                    await api.createFile(fileObj);
+                } catch (err) {
+                    console.error('Error saving file to database:', err);
+                    showToast('Error uploading file to database');
+                    files = files.filter(f => f.id !== fileId); // Remove from local state on error
+                }
                 resolve();
             };
             reader.readAsDataURL(file);
@@ -845,13 +852,19 @@ async function createFolderInFiles() {
     const name = document.getElementById('newFolderInput').value.trim();
     if (!name) return showToast("Please enter a folder name");
 
-    const newFol = { id: 'fol_' + Date.now(), categoryId: navState.currentCatId, name: name };
+    const newFol = { id: 'fol_' + Date.now(), category_id: navState.currentCatId, name: name };
     folders.push(newFol);
-    await saveToStorage('folders', folders);
-
-    showToast("Folder created successfully");
-    closeFolderModal();
-    renderAdminMedia();
+    
+    try {
+        await api.createFolder(newFol);
+        showToast("Folder created successfully");
+        closeFolderModal();
+        renderAdminMedia();
+    } catch (err) {
+        console.error('Error creating folder:', err);
+        folders = folders.filter(f => f.id !== newFol.id);
+        showToast("Error creating folder");
+    }
 }
 
 // ========== THUMBNAIL ==========
