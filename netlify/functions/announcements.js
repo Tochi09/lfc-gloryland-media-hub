@@ -1,0 +1,82 @@
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
+
+exports.handler = async (event, context) => {
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200 };
+  }
+
+  try {
+    const userLevel = parseInt(event.headers['x-user-level'] || '0');
+
+    if (event.httpMethod === 'GET') {
+      const { data, error } = await supabase
+        .from('announcements')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return {
+        statusCode: 200,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ data })
+      };
+    }
+
+    if (event.httpMethod === 'POST') {
+      if (userLevel < 2) {
+        return {
+          statusCode: 403,
+          body: JSON.stringify({ error: 'Insufficient permissions' })
+        };
+      }
+
+      const body = JSON.parse(event.body);
+      const { data, error } = await supabase
+        .from('announcements')
+        .insert([body])
+        .select();
+
+      if (error) throw error;
+
+      return {
+        statusCode: 201,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ data })
+      };
+    }
+
+    if (event.httpMethod === 'DELETE') {
+      if (userLevel < 2) {
+        return {
+          statusCode: 403,
+          body: JSON.stringify({ error: 'Insufficient permissions' })
+        };
+      }
+
+      const id = event.queryStringParameters?.id;
+      const { error } = await supabase
+        .from('announcements')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      return {
+        statusCode: 200,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ success: true })
+      };
+    }
+  } catch (error) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: error.message })
+    };
+  }
+};

@@ -1,0 +1,19 @@
+[build]
+command = "echo 'Build complete'"
+functions = "netlify/functions"
+publish = "."
+
+[env.production]
+variables = { SUPABASE_URL = "YOUR_SUPABASE_URL", SUPABASE_KEY = "YOUR_SUPABASE_KEY" }
+
+[[redirects]]
+from = "/api/*"
+to = "/.netlify/functions/:splat"
+status = 200
+
+[[headers]]
+for = "/*"
+[headers.values]
+Access-Control-Allow-Origin = "*"
+Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+Access-Control-Allow-Headers = "Content-Type, Authorization"

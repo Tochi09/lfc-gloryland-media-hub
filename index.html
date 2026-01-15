@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LFC Gloryland Media Hub</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <script src="api-client.js"></script>
+</head>
+<body>
+
+    <div id="toast" class="toast hidden">Notification</div>
+
+    <!-- PUBLIC VIEW -->
+    <div id="publicView">
+        <header>
+            <div class="nav-wrapper">
+                <div class="brand" onclick="window.scrollTo(0,0)">
+                    <i class="fas fa-church"></i> <span id="headerBrandName">LFC GLORYLAND</span>
+                </div>
+                <nav class="nav-links">
+                    <button class="btn btn-icon" id="themeToggle" onclick="toggleTheme()">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="btn btn-primary" onclick="showLogin()">
+                        <i class="fas fa-lock"></i> Admin Portal
+                    </button>
+                </nav>
+            </div>
+        </header>
+
+        <div class="hero-section">
+            <div class="hero-overlay"></div>
+            <div id="publicHeroSlider" class="hero-bg-container"></div>
+            <div class="hero-content">
+                <span class="pill-badge">Welcome Home</span>
+                <h1 id="heroTitle">GLORYLAND<br>MEDIA HUB</h1>
+                <p id="heroSubtitle">Access sermons, worship moments, and spiritual resources.</p>
+                <button class="btn btn-lg btn-glow" onclick="document.getElementById('librarySection').scrollIntoView({behavior:'smooth'})">
+                    Start Browsing
+                </button>
+            </div>
+        </div>
+
+        <section class="announcement-section">
+            <div class="container">
+                <div class="section-title">
+                    <h2><i class="fas fa-bullhorn"></i> Latest Updates</h2>
+                </div>
+                <div class="updates-grid" id="publicAnnouncementContainer"></div>
+            </div>
+        </section>
+
+        <section class="featured-media-section">
+            <div class="container">
+                <div class="section-title center">
+                    <h2><i class="fas fa-star"></i> Featured Media</h2>
+                    <p>Handpicked content just for you</p>
+                </div>
+                <div id="featuredMediaGrid" class="pinterest-grid"></div>
+            </div>
+        </section>
+
+        <section id="librarySection" class="library-section">
+            <div class="container">
+                <div class="section-title center">
+                    <h2>Browse Media Library</h2>
+                    <p>Select a category to view content</p>
+                </div>
+
+                <div class="breadcrumbs" id="publicBreadcrumbs">
+                    <span onclick="resetPublicView()">Library</span>
+                </div>
+
+                <div id="publicContentArea" class="grid-layout"></div>
+            </div>
+        </section>
+
+        <footer class="site-footer">
+            <div class="container">
+                <div class="footer-content">
+                    <div class="footer-section">
+                        <h4><i class="fas fa-church"></i> <span id="footerBrandName">LFC Gloryland</span></h4>
+                        <p id="footerDescription">Spreading God's word through digital media and community outreach.</p>
+                    </div>
+                    <div class="footer-section">
+                        <h4><i class="fas fa-link"></i> Connect With Us</h4>
+                        <div class="social-icons">
+                            <a href="#" class="social-link" id="facebookLink"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#" class="social-link" id="twitterLink"><i class="fab fa-twitter"></i></a>
+                            <a href="#" class="social-link" id="instagramLink"><i class="fab fa-instagram"></i></a>
+                            <a href="#" class="social-link" id="youtubeLink"><i class="fab fa-youtube"></i></a>
+                        </div>
+                    </div>
+                    <div class="footer-section">
+                        <h4><i class="fas fa-envelope"></i> Contact</h4>
+                        <p><i class="fas fa-map-marker-alt"></i> <span id="footerAddress">123 Faith Street, Gloryland</span></p>
+                        <p><i class="fas fa-phone"></i> <span id="footerPhone">(555) 123-4567</span></p>
+                        <p><i class="fas fa-envelope"></i> <span id="footerEmail">info@lfcgloryland.com</span></p>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <p id="footerCopyright">&copy; 2026 LFC Gloryland Media Hub. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- AUTH VIEW -->
+    <div id="authView" class="hidden">
+        <div class="login-card">
+            <div class="login-header">
+                <i class="fas fa-shield-alt"></i>
+                <h2>Admin Access</h2>
+                <p>Enter security code to continue</p>
+            </div>
+            <form onsubmit="event.preventDefault(); attemptLogin();">
+                <div class="input-wrapper">
+                    <i class="fas fa-key"></i>
+                    <input type="password" id="adminCodeInput" placeholder="Password" maxlength="10">
+                </div>
+                <button type="submit" class="btn btn-block btn-primary">Authenticate</button>
+            </form>
+            <p class="back-link" onclick="showPublic()">← Back to Website</p>
+        </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD -->
+    <div id="dashboardView" class="hidden">
+        
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3>LFC ADMIN</h3>
+                <p class="user-role" id="currentUserRole">Level 3 Admin</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li onclick="switchAdminSection('overview', this)" class="active">
+                    <i class="fas fa-chart-pie"></i> Overview
+                </li>
+                <li onclick="switchAdminSection('media', this)">
+                    <i class="fas fa-folder-open"></i> Media Library
+                </li>
+                <li onclick="switchAdminSection('featured', this)">
+                    <i class="fas fa-star"></i> Featured Media
+                </li>
+                <li onclick="switchAdminSection('slider', this)">
+                    <i class="fas fa-images"></i> Hero Slider
+                </li>
+                <li onclick="switchAdminSection('announcements', this)">
+                    <i class="fas fa-newspaper"></i> Updates
+                </li>
+                <li onclick="switchAdminSection('branding', this)">
+                    <i class="fas fa-palette"></i> Branding
+                </li>
+                <li onclick="switchAdminSection('staff', this)">
+                    <i class="fas fa-users-cog"></i> Staff
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <button class="btn btn-danger btn-block" onclick="showPublic()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <main class="dashboard-content">
+            
+            <!-- OVERVIEW -->
+            <div id="admin-overview" class="admin-section active">
+                <div class="dashboard-header">
+                    <h1>Dashboard Overview</h1>
+                    <span class="date-display">Live Data</span>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="icon-box blue"><i class="fas fa-users"></i></div>
+                        <div><h3>12,540</h3><p>Total Visitors</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon-box purple"><i class="fas fa-download"></i></div>
+                        <div><h3>845</h3><p>Downloads</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon-box green"><i class="fas fa-heart"></i></div>
+                        <div><h3>3,200</h3><p>Likes</p></div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3><i class="fas fa-chart-line"></i> Analytics</h3>
+                    <canvas id="trafficChart"></canvas>
+                </div>
+            </div>
+
+            <!-- MEDIA LIBRARY -->
+            <div id="admin-media" class="admin-section">
+                <div class="dashboard-header">
+                    <h1>Media Manager</h1>
+                    <div class="breadcrumbs" id="adminBreadcrumbs">
+                        <span onclick="resetAdminMediaView()">Categories</span>
+                    </div>
+                </div>
+
+                <div id="adminMediaContent" class="grid-layout"></div>
+
+                <div class="action-bar">
+                    <input type="text" id="newItemInput" placeholder="New Category/Folder Name..." class="modern-input">
+                    <input type="file" id="fileUploader" class="hidden" multiple onchange="handleFileUpload(this)">
+                    
+                    <button id="addBtn" class="btn btn-primary" onclick="handleAddItem()">
+                        <i class="fas fa-plus"></i> Create
+                    </button>
+                    <button id="uploadBtn" class="btn btn-primary hidden" onclick="document.getElementById('fileUploader').click()">
+                        <i class="fas fa-cloud-upload-alt"></i> Upload Files
+                    </button>
+                    <button id="addFolderBtn" class="btn btn-secondary hidden" onclick="showAddFolderDialog()">
+                        <i class="fas fa-folder-plus"></i> New Folder
+                    </button>
+                </div>
+            </div>
+
+            <!-- FEATURED MEDIA -->
+            <div id="admin-featured" class="admin-section">
+                <div class="dashboard-header">
+                    <h1>Featured Media Manager</h1>
+                    <button class="btn btn-primary" onclick="showAddFeaturedModal()">
+                        <i class="fas fa-plus"></i> Add Featured Item
+                    </button>
+                </div>
+                <div id="adminFeaturedGrid" class="grid-layout"></div>
+            </div>
+
+            <!-- SLIDER -->
+            <div id="admin-slider" class="admin-section">
+                <h1>Hero Slider Configuration</h1>
+                <div class="card-panel">
+                    <div class="form-group">
+                        <label>Animation Style</label>
+                        <select id="sliderAnimSelect" class="modern-select" onchange="updateSliderAnimation()">
+                            <option value="fade">Fade Transition</option>
+                            <option value="slide">Slide Transition</option>
+                            <option value="zoom">Zoom Transition</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Add New Slide</label>
+                        <div class="file-drop-zone">
+                            <input type="file" id="sliderFileInput" accept="image/*">
+                            <button class="btn btn-primary" onclick="addSliderImage()">Add Image</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid-layout" id="adminSliderList"></div>
+            </div>
+
+            <!-- ANNOUNCEMENTS -->
+            <div id="admin-announcements" class="admin-section">
+                <h1>Announcements</h1>
+                <div class="card-panel">
+                    <div class="row">
+                        <input type="text" id="annDate" class="modern-input" placeholder="Date (e.g. TODAY)">
+                        <input type="text" id="annTitle" class="modern-input" placeholder="Headline">
+                    </div>
+                    <textarea id="annContent" class="modern-textarea" placeholder="Announcement details..."></textarea>
+                    <div class="row align-center">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="annHighlight">
+                            <span class="checkmark"></span> Urgent / Red Highlight
+                        </label>
+                        <button class="btn btn-primary" onclick="addAnnouncement()">Post Update</button>
+                    </div>
+                </div>
+                <div id="adminAnnouncementList" class="list-view"></div>
+            </div>
+
+            <!-- BRANDING -->
+            <div id="admin-branding" class="admin-section">
+                <h1>Website Branding</h1>
+                
+                <div class="card-panel">
+                    <h3><i class="fas fa-image"></i> Hero Background Images</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 15px;">Upload images for the homepage hero slider</p>
+                    <div class="file-drop-zone">
+                        <input type="file" id="heroImageUpload" accept="image/*" multiple>
+                        <button class="btn btn-primary" onclick="uploadHeroImages()">
+                            <i class="fas fa-cloud-upload-alt"></i> Upload Hero Images
+                        </button>
+                    </div>
+                    <div class="grid-layout" id="heroImagesList" style="margin-top: 20px;"></div>
+                </div>
+
+                <div class="card-panel">
+                    <h3><i class="fas fa-heading"></i> Header & Hero Section</h3>
+                    <div class="form-group">
+                        <label>Brand Name</label>
+                        <input type="text" id="brandName" class="modern-input" placeholder="LFC GLORYLAND">
+                    </div>
+                    <div class="form-group">
+                        <label>Hero Title</label>
+                        <input type="text" id="heroTitleInput" class="modern-input" placeholder="GLORYLAND MEDIA HUB">
+                    </div>
+                    <div class="form-group">
+                        <label>Hero Subtitle</label>
+                        <input type="text" id="heroSubtitleInput" class="modern-input" placeholder="Access sermons...">
+                    </div>
+                </div>
+
+                <div class="card-panel">
+                    <h3><i class="fas fa-shoe-prints"></i> Footer Information</h3>
+                    <div class="form-group">
+                        <label>Footer Description</label>
+                        <textarea id="footerDesc" class="modern-textarea" placeholder="About your organization"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="form-group" style="flex:1">
+                            <label>Address</label>
+                            <input type="text" id="footerAddr" class="modern-input">
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label>Phone</label>
+                            <input type="text" id="footerPh" class="modern-input">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="footerEm" class="modern-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Copyright Text</label>
+                        <input type="text" id="footerCopy" class="modern-input">
+                    </div>
+                    
+                    <h4 style="margin-top:20px"><i class="fab fa-facebook"></i> Social Media Links</h4>
+                    <div class="row">
+                        <input type="url" id="fbLink" class="modern-input" placeholder="Facebook URL">
+                        <input type="url" id="twLink" class="modern-input" placeholder="Twitter URL">
+                    </div>
+                    <div class="row">
+                        <input type="url" id="igLink" class="modern-input" placeholder="Instagram URL">
+                        <input type="url" id="ytLink" class="modern-input" placeholder="YouTube URL">
+                    </div>
+                    
+                    <button class="btn btn-primary btn-block" onclick="saveBranding()">
+                        <i class="fas fa-save"></i> Save All Changes
+                    </button>
+                </div>
+            </div>
+
+            <!-- STAFF -->
+            <div id="admin-staff" class="admin-section">
+                <h1>Staff Management</h1>
+                <div class="card-panel">
+                    <h3>Add New Staff Member</h3>
+                    <div class="row">
+                        <input type="text" id="newStaffName" class="modern-input" placeholder="Full Name">
+                        <input type="email" id="newStaffEmail" class="modern-input" placeholder="Email Address">
+                    </div>
+                    <div class="row">
+                        <input type="password" id="newStaffPassword" class="modern-input" placeholder="Password">
+                        <select id="newStaffLevel" class="modern-select">
+                            <option value="1">Level 1 - Basic Access</option>
+                            <option value="2">Level 2 - Moderate Access</option>
+                            <option value="3">Level 3 - Full Access</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="addStaff()">
+                        <i class="fas fa-user-plus"></i> Add Staff Member
+                    </button>
+                </div>
+
+                <div class="card-panel">
+                    <h3>Staff Permissions Guide</h3>
+                    <div class="permission-guide">
+                        <div class="permission-level">
+                            <strong>Level 1:</strong> Can upload media with approval, view analytics
+                        </div>
+                        <div class="permission-level">
+                            <strong>Level 2:</strong> Can approve uploads, manage content, edit branding
+                        </div>
+                        <div class="permission-level">
+                            <strong>Level 3:</strong> Full access including staff management
+                        </div>
+                    </div>
+                </div>
+
+                <table class="modern-table" id="staffTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Access Level</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="staffTableBody">
+                        <tr>
+                            <td>Senior Pastor</td>
+                            <td>pastor@lfcgl.com</td>
+                            <td><span class="badge badge-level3">Level 3</span></td>
+                            <td><span class="badge badge-active">Active</span></td>
+                            <td><span class="badge badge-gray">Protected</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODALS -->
+    <div id="editModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> <span id="editModalTitle">Edit Item</span></h3>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="editItemInput" class="modern-input" placeholder="Enter new name">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveEdit()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="folderModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-folder-plus"></i> Create New Folder</h3>
+                <button class="modal-close" onclick="closeFolderModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="newFolderInput" class="modern-input" placeholder="Folder name...">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeFolderModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="createFolderInFiles()">Create Folder</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="featuredModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-star"></i> Add Featured Media</h3>
+                <button class="modal-close" onclick="closeFeaturedModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" id="featuredTitle" class="modern-input">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="featuredDesc" class="modern-textarea"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Upload Image/Video</label>
+                    <input type="file" id="featuredFile" class="modern-input" accept="image/*,video/*">
+                </div>
+                <div class="form-group">
+                    <label>Tags (comma separated)</label>
+                    <input type="text" id="featuredTags" class="modern-input" placeholder="worship, sermon, prayer">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeFeaturedModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveFeaturedItem()">Add to Featured</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mediaDetailModal" class="modal hidden">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 id="mediaDetailTitle">Media Title</h3>
+                <button class="modal-close" onclick="closeMediaDetail()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="mediaDetailContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
