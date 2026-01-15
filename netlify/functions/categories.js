@@ -5,9 +5,16 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 );
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, x-user-level',
+  'Content-Type': 'application/json'
+};
+
 exports.handler = async (event, context) => {
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200 };
+    return { statusCode: 200, headers: corsHeaders };
   }
 
   try {
@@ -100,9 +107,11 @@ exports.handler = async (event, context) => {
       };
     }
   } catch (error) {
+    console.error('Category Error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message })
+      headers: corsHeaders,
+      body: JSON.stringify({ error: error.message || 'Internal server error' })
     };
   }
 };
