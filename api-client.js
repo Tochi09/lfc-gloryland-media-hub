@@ -173,6 +173,7 @@ class APIClient {
   async deleteSliderImage(id) {
     return this.apiCall(`/slider-images?id=${id}`, 'DELETE');
   }
+}
 
 // Initialize API client
 const api = new APIClient();
