@@ -195,9 +195,9 @@ async function attemptLogin() {
     const code = document.getElementById('adminCodeInput').value;
     
     try {
-        console.log('Attempting login with password...');
+        console.log('Attempting login...');
         const result = await api.login(code);
-        console.log('Login successful:', result);
+        console.log('Login result:', result);
         
         if (result.user) {
             currentUser = result.user;
@@ -219,7 +219,7 @@ async function attemptLogin() {
         const input = document.getElementById('adminCodeInput');
         input.parentElement.classList.add('shake');
         setTimeout(() => input.parentElement.classList.remove('shake'), 500);
-        showToast("Access Denied - Invalid password. Use: 24250 (Level 3), 'god is with us' (Level 2), or 'god is here' (Level 1)");
+        showToast("Invalid access code");
     }
 }
 
