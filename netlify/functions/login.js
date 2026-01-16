@@ -5,6 +5,13 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 );
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Content-Type': 'application/json'
+};
+
 // User credentials (hardcoded for now - stored in your existing system)
 const users = {
   '24250': { level: 3, name: 'Admin', email: 'admin@lfcgl.com' },
@@ -16,11 +23,7 @@ exports.handler = async (event, context) => {
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      }
+      headers: corsHeaders
     };
   }
 
@@ -31,6 +34,7 @@ exports.handler = async (event, context) => {
     if (!password) {
       return {
         statusCode: 400,
+        headers: corsHeaders,
         body: JSON.stringify({ error: 'Password required' })
       };
     }
@@ -39,6 +43,7 @@ exports.handler = async (event, context) => {
     if (!user) {
       return {
         statusCode: 401,
+        headers: corsHeaders,
         body: JSON.stringify({ error: 'Invalid password' })
       };
     }
@@ -48,7 +53,7 @@ exports.handler = async (event, context) => {
 
     return {
       statusCode: 200,
-      headers: { 'Access-Control-Allow-Origin': '*' },
+      headers: corsHeaders,
       body: JSON.stringify({
         success: true,
         user: { ...user, token },
@@ -58,6 +63,11 @@ exports.handler = async (event, context) => {
   } catch (error) {
     return {
       statusCode: 500,
+      headers: corsHeaders,
+      body: JSON.stringify({ error: error.message || 'Internal server error' })
+    };
+  }
+};
       body: JSON.stringify({ error: error.message })
     };
   }
