@@ -253,14 +253,3 @@ exports.handler = async (event, context) => {
     };
   }
 };
-      };
-    }
-  } catch (error) {
-    console.error('Slider Images Error:', error);
-    return {
-      statusCode: 500,
-      headers: corsHeaders,
-      body: JSON.stringify({ error: error.message || 'Internal server error' })
-    };
-  }
-};
