@@ -314,7 +314,24 @@ function applyBranding() {
 }
 
 async function loadBrandingForm() {
-    console.log('Loading branding form, sliderImages count:', sliderImages.length);
+    console.log('Loading branding form...');
+    
+    // First, reload hero images from API to get latest
+    try {
+        console.log('Reloading hero images from API...');
+        const result = await api.getSliderImages();
+        console.log('API response:', result);
+        if (result && result.data && result.data.length > 0) {
+            sliderImages = result.data;
+            console.log('Loaded', sliderImages.length, 'images from API');
+        } else {
+            sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
+            console.log('API empty, using defaults');
+        }
+    } catch (e) {
+        console.error('Error reloading images:', e);
+        sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
+    }
     
     document.getElementById('brandName').value = siteSettings.brandName;
     document.getElementById('heroTitleInput').value = siteSettings.heroTitle.replace('<br>', ' ');
@@ -329,8 +346,8 @@ async function loadBrandingForm() {
     document.getElementById('igLink').value = siteSettings.socialLinks.instagram;
     document.getElementById('ytLink').value = siteSettings.socialLinks.youtube;
     
-    // Render hero images list
-    console.log('Rendering hero images list...');
+    // Render hero images list with latest data
+    console.log('Rendering hero images list with', sliderImages.length, 'images');
     renderHeroImagesList();
 }
 
@@ -476,10 +493,16 @@ async function uploadHeroImages() {
         }
         
         // Update ALL displays
-        console.log('Updating all displays...');
-        renderHeroImagesList();  // Update branding tab
-        renderAdminSlider();      // Update hero slider tab
-        startHeroSlider();        // Update public page slider
+        console.log('Updating all displays with', sliderImages.length, 'images...');
+        renderHeroImagesList();     // Update branding tab
+        renderAdminSlider();         // Update hero slider tab
+        
+        // Update public page hero section
+        const publicHero = document.getElementById('publicHeroSlider');
+        if (publicHero && sliderImages.length > 0) {
+            publicHero.style.backgroundImage = `url('${sliderImages[0].url}')`;
+            console.log('Updated public hero slider background');
+        }
         
         showToast(`${uploadedCount} hero image(s) uploaded!`);
         if (input) input.value = '';

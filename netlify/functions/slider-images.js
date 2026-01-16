@@ -22,13 +22,19 @@ exports.handler = async (event, context) => {
 
     // GET - retrieve all slider images
     if (event.httpMethod === 'GET') {
+      console.log('GET /slider-images - Fetching from database');
       const { data, error } = await supabase
         .from('slider_images')
         .select('*')
         .order('id', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching images:', error);
+        throw error;
+      }
 
+      console.log('GET /slider-images - Found', data ? data.length : 0, 'images');
+      
       return {
         statusCode: 200,
         headers: corsHeaders,
@@ -47,13 +53,19 @@ exports.handler = async (event, context) => {
       }
 
       const body = JSON.parse(event.body);
+      console.log('POST /slider-images - Inserting image, URL length:', body.url ? body.url.length : 0);
       
       const { data, error } = await supabase
         .from('slider_images')
         .insert([{ url: body.url }])
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database insert error:', error);
+        throw error;
+      }
+
+      console.log('POST /slider-images - Success! Saved image with ID:', data[0]?.id);
 
       return {
         statusCode: 201,
