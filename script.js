@@ -49,8 +49,8 @@ let editState = {
 };
 
 // ========== INITIALIZATION ==========
-document.addEventListener('DOMContentLoaded', () => {
-    loadFromStorage();
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadFromStorage();
     showPublic();
     initChart();
     applyBranding();
