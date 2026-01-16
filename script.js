@@ -154,11 +154,14 @@ async function loadFromStorage() {
         try {
             console.log('Loading slider images...');
             const sliderResult = await api.getSliderImages();
-            if (sliderResult.data) {
+            console.log('Slider images API response:', sliderResult);
+            if (sliderResult && sliderResult.data) {
                 sliderImages = sliderResult.data;
-                console.log('Slider images loaded:', sliderImages.length);
+                console.log('Slider images loaded:', sliderImages.length, sliderImages);
+            } else {
+                console.log('No slider data in response');
             }
-        } catch (e) { console.log('Slider images not available', e); }
+        } catch (e) { console.error('Slider images error:', e); }
 
         // Load likes from localStorage (client-side only)
         likedItems = JSON.parse(localStorage.getItem('likedItems') || '{}');

@@ -44,16 +44,22 @@ class APIClient {
         options.body = JSON.stringify(data);
       }
 
+      console.log(`[API] ${method} ${this.baseUrl}${endpoint}`, data || '');
       const response = await fetch(`${this.baseUrl}${endpoint}`, options);
+      
+      console.log(`[API Response] ${method} ${endpoint}: ${response.status}`);
 
       if (!response.ok) {
         const error = await response.json();
+        console.error(`[API Error] ${method} ${endpoint}:`, error);
         throw new Error(error.error || 'API Error');
       }
 
-      return await response.json();
+      const result = await response.json();
+      console.log(`[API Success] ${method} ${endpoint}:`, result);
+      return result;
     } catch (error) {
-      console.error('API Error:', error);
+      console.error(`[API Exception] ${endpoint}:`, error);
       throw error;
     }
   }
