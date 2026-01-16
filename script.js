@@ -5,23 +5,32 @@ let currentUser = { level: 3, name: 'Admin', email: 'admin@lfcgl.com' };
 let supabaseClient = null;
 
 const initSupabase = () => {
-    if (typeof window.supabase === 'undefined') {
-        console.error('Supabase not loaded. Make sure supabase-js is loaded.');
+    // Check if config exists and is valid
+    if (typeof SUPABASE_CONFIG === 'undefined' || !SUPABASE_CONFIG) {
+        console.warn('Supabase config not found - image upload disabled');
         return;
     }
     
-    if (!SUPABASE_CONFIG || !SUPABASE_CONFIG.url || !SUPABASE_CONFIG.anonKey) {
-        console.error('Supabase config missing. Update supabase-config.js with your credentials.');
-        showToast('Supabase configuration missing - image upload disabled');
+    if (!SUPABASE_CONFIG.url || SUPABASE_CONFIG.url.includes('YOUR_')) {
+        console.warn('Supabase config has placeholder values - please update supabase-config.js');
+        return;
+    }
+    
+    if (!SUPABASE_CONFIG.anonKey || SUPABASE_CONFIG.anonKey.includes('YOUR_')) {
+        console.warn('Supabase anonKey has placeholder value - please update supabase-config.js');
+        return;
+    }
+    
+    if (typeof window.supabase === 'undefined') {
+        console.warn('Supabase library not loaded');
         return;
     }
     
     try {
         supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
-        console.log('Supabase client initialized for storage');
+        console.log('✓ Supabase client initialized for storage');
     } catch (err) {
         console.error('Error initializing Supabase:', err);
-        showToast('Error initializing file upload - ' + err.message);
     }
 };
 
@@ -445,6 +454,11 @@ function renderHeroImagesList() {
 async function uploadHeroImages() {
     if (currentUser.level < 2) {
         return showToast("Only Level 2+ can upload hero images");
+    }
+    
+    // Check if Supabase is configured
+    if (!supabaseClient) {
+        return showToast("Supabase not configured. Please update supabase-config.js with your credentials and refresh the page.");
     }
     
     // Check both possible input sources

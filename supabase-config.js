@@ -1,15 +1,32 @@
 // ========== SUPABASE CONFIGURATION ==========
-// UPDATE THIS FILE WITH YOUR SUPABASE CREDENTIALS
+// IMPORTANT: Update this file with your Supabase credentials
 
-// Get these values from your Supabase project:
+// Step 1: Get your Supabase credentials
 // 1. Go to https://supabase.com and log in
-// 2. Click on your project
-// 3. Go to Settings → API
-// 4. Copy the Project URL and anon key
+// 2. Click on your project name (lfc-gloryland-media-hub)
+// 3. Click Settings → API
+// 4. Copy the Project URL (looks like: https://your-project.supabase.co)
+// 5. Copy the anon public key (starts with: eyJhbGciOi...)
 
+// Step 2: Create a storage bucket named 'media'
+// 1. In Supabase dashboard, click Storage in the sidebar
+// 2. Click "Create a new bucket"
+// 3. Name it: media
+// 4. Make it PUBLIC (important for image display)
+// 5. Click Create
+
+// Step 3: Fill in your credentials below
 const SUPABASE_CONFIG = {
-    url: 'YOUR_SUPABASE_PROJECT_URL', // Replace with your Supabase URL
-    anonKey: 'YOUR_SUPABASE_ANON_KEY'  // Replace with your Supabase public/anon key
+    // Replace with your actual Supabase Project URL
+    url: 'YOUR_SUPABASE_PROJECT_URL',
+    
+    // Replace with your actual Supabase anon key
+    anonKey: 'YOUR_SUPABASE_ANON_KEY'
 };
 
-// Initialize Supabase in script.js using these credentials
+// Example (DO NOT USE - for reference only):
+// const SUPABASE_CONFIG = {
+//     url: 'https://your-project.supabase.co',
+//     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz...'
+// };
+
