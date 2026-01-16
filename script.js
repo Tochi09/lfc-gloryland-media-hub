@@ -243,6 +243,19 @@ function switchAdminSection(sectionId, btn) {
     btn.classList.add('active');
     document.querySelectorAll('.admin-section').forEach(div => div.classList.remove('active'));
     document.getElementById('admin-' + sectionId).classList.add('active');
+    
+    // Refresh content when switching sections
+    if (sectionId === 'branding') {
+        console.log('Switching to branding section, rendering hero images...');
+        renderHeroImagesList();
+    } else if (sectionId === 'media') {
+        resetAdminMediaView();
+        renderAdminMedia();
+    } else if (sectionId === 'announcements') {
+        renderAdminAnnouncements();
+    } else if (sectionId === 'featured') {
+        renderAdminFeatured();
+    }
 }
 
 function toggleTheme() {
@@ -272,7 +285,9 @@ function applyBranding() {
     if (siteSettings.socialLinks.youtube) document.getElementById('youtubeLink').href = siteSettings.socialLinks.youtube;
 }
 
-function loadBrandingForm() {
+async function loadBrandingForm() {
+    console.log('Loading branding form, sliderImages count:', sliderImages.length);
+    
     document.getElementById('brandName').value = siteSettings.brandName;
     document.getElementById('heroTitleInput').value = siteSettings.heroTitle.replace('<br>', ' ');
     document.getElementById('heroSubtitleInput').value = siteSettings.heroSubtitle;
@@ -287,6 +302,7 @@ function loadBrandingForm() {
     document.getElementById('ytLink').value = siteSettings.socialLinks.youtube;
     
     // Render hero images list
+    console.log('Rendering hero images list...');
     renderHeroImagesList();
 }
 
