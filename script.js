@@ -410,32 +410,41 @@ async function uploadHeroImages() {
             const file = input.files[i];
             const reader = new FileReader();
             
-            await new Promise((resolve) => {
+            await new Promise((resolve, reject) => {
+                reader.onerror = () => {
+                    console.error('FileReader error:', reader.error);
+                    reject(reader.error);
+                };
+                
                 reader.onload = async function (e) {
+                    const imageData = e.target.result;
+                    console.log('File size:', file.size, 'File type:', file.type);
+                    console.log('Base64 length:', imageData.length);
+                    
                     const imageObj = { 
-                        url: e.target.result 
+                        url: imageData
                     };
                     
                     // Save to API
                     try {
+                        console.log('Uploading image to API...');
                         const result = await api.createSliderImage(imageObj);
                         console.log('Slider image API response:', result);
                         
-                        // Add the returned object with ID from database
-                        if (result.data && result.data.length > 0) {
+                        if (result && result.data && result.data.length > 0) {
                             const savedImage = result.data[0];
-                            // Check if not already in array
+                            console.log('Image saved successfully with ID:', savedImage.id);
                             if (!sliderImages.find(img => img.id === savedImage.id)) {
                                 sliderImages.push(savedImage);
                             }
                         } else {
-                            // Fallback if API doesn't return the data
+                            console.warn('Unexpected API response format:', result);
                             sliderImages.push(imageObj);
                         }
                     } catch (err) {
                         console.error('Error saving slider image:', err);
-                        showToast('Error saving slider image');
-                        throw err;
+                        showToast('Error saving slider image: ' + err.message);
+                        reject(err);
                     }
                     resolve();
                 };
@@ -443,11 +452,16 @@ async function uploadHeroImages() {
             });
         }
         
+        // Wait a moment for database to settle
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         // Reload from API to ensure consistency
+        console.log('Reloading slider images from API...');
         const sliderResult = await api.getSliderImages();
-        if (sliderResult.data) {
+        console.log('Reload result:', sliderResult);
+        if (sliderResult && sliderResult.data) {
             sliderImages = sliderResult.data;
-            console.log('Reloaded slider images from API:', sliderImages);
+            console.log('Reloaded slider images count:', sliderImages.length);
         }
         
         renderHeroImagesList();
@@ -456,7 +470,7 @@ async function uploadHeroImages() {
         input.value = '';
     } catch (err) {
         console.error('Error uploading hero images:', err);
-        showToast("Error uploading hero images");
+        showToast("Error uploading hero images: " + err.message);
         // Reload from API to get correct state
         await loadFromStorage();
         renderHeroImagesList();

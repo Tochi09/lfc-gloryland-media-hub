@@ -26,7 +26,12 @@ exports.handler = async (event, context) => {
         .select('*')
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase GET error:', error);
+        throw error;
+      }
+      
+      console.log('GET /slider-images: Returned', data.length, 'images');
 
       return {
         statusCode: 200,
@@ -45,12 +50,19 @@ exports.handler = async (event, context) => {
       }
 
       const body = JSON.parse(event.body);
+      console.log('POST /slider-images: Inserting image, URL length:', body.url ? body.url.length : 0);
+      
       const { data, error } = await supabase
         .from('slider_images')
         .insert([body])
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase insert error:', error);
+        throw error;
+      }
+      
+      console.log('POST /slider-images: Success, returned', data.length, 'records');
 
       return {
         statusCode: 201,
