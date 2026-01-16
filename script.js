@@ -428,7 +428,15 @@ async function uploadHeroImages() {
         return showToast("Only Level 2+ can upload hero images");
     }
     
-    const input = document.getElementById('heroImageUpload');
+    // Check both possible input sources
+    let input = document.getElementById('heroImageUpload');
+    const sliderInput = document.getElementById('sliderFileInput');
+    
+    // If called from hero slider tab and heroImageUpload is empty, use sliderFileInput
+    if ((!input || !input.files || !input.files.length) && sliderInput && sliderInput.files && sliderInput.files.length) {
+        input = sliderInput;
+    }
+    
     if (!input || !input.files || !input.files.length) {
         return showToast("Please select images to upload");
     }
@@ -534,10 +542,25 @@ async function removeHeroImage(id) {
         if (sliderResult.data) {
             sliderImages = sliderResult.data;
             console.log('Reloaded slider images after deletion:', sliderImages);
+        } else if (sliderResult.data && sliderResult.data.length === 0) {
+            sliderImages = [];
         }
         
+        // Update all displays
         renderHeroImagesList();
         renderAdminSlider();
+        
+        // Update public hero section
+        const publicHero = document.getElementById('publicHeroSlider');
+        if (publicHero) {
+            if (sliderImages && sliderImages.length > 0) {
+                publicHero.style.backgroundImage = `url('${sliderImages[0].url}')`;
+            } else {
+                publicHero.style.backgroundImage = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            }
+            console.log('Updated public hero slider background after deletion');
+        }
+        
         showToast("Hero image removed");
     } catch (err) {
         console.error('Error removing slider image:', err);
@@ -1468,10 +1491,17 @@ async function likeMedia(id, type = 'file') {
 // ========== SLIDER ==========
 function startHeroSlider() {
     const container = document.getElementById('publicHeroSlider');
+    if (!container) return;
+    
     let idx = 0;
 
     function cycle() {
-        if (sliderImages.length === 0) return;
+        if (!sliderImages || sliderImages.length === 0) {
+            // If no images, show placeholder or default
+            container.style.backgroundImage = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            return;
+        }
+        
         idx = (idx + 1) % sliderImages.length;
         
         if (sliderAnimation === 'fade') {
@@ -1497,8 +1527,17 @@ function startHeroSlider() {
         }
     }
 
-    if (sliderImages.length > 0) container.style.backgroundImage = `url('${sliderImages[0].url}')`;
-    setInterval(cycle, 5000);
+    // Set initial image
+    if (sliderImages && sliderImages.length > 0) {
+        container.style.backgroundImage = `url('${sliderImages[0].url}')`;
+    } else {
+        container.style.backgroundImage = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    }
+    
+    // Cycle every 5 seconds if there are multiple images
+    if (sliderImages && sliderImages.length > 1) {
+        setInterval(cycle, 5000);
+    }
 }
 
 function renderAdminSlider() {
@@ -1507,12 +1546,17 @@ function renderAdminSlider() {
     select.value = sliderAnimation;
     
     list.innerHTML = '';
+    if (sliderImages.length === 0) {
+        list.innerHTML = '<p class="text-muted">No slider images uploaded yet.</p>';
+        return;
+    }
+    
     sliderImages.forEach(img => {
         list.innerHTML += `
             <div class="file-card">
                 <img src="${img.url}" class="file-preview">
                 <div class="file-info">
-                    <button onclick="removeSlider(${img.id})" class="btn btn-danger" style="width:100%">Remove</button>
+                    <button onclick="removeHeroImage(${img.id})" class="btn btn-danger" style="width:100%">Remove</button>
                 </div>
             </div>`;
     });
@@ -1520,24 +1564,21 @@ function renderAdminSlider() {
 
 async function addSliderImage() {
     const input = document.getElementById('sliderFileInput');
-    if (input.files.length > 0) {
-        const reader = new FileReader();
-        reader.onload = async function (e) {
-            sliderImages.push({ id: Date.now(), url: e.target.result });
-            await saveToStorage('slider_images', sliderImages);
-            renderAdminSlider();
-            showToast("Slide Added");
-            input.value = '';
-        };
-        reader.readAsDataURL(input.files[0]);
+    if (!input || !input.files || !input.files.length) {
+        return showToast("Please select an image to upload");
     }
-}
-
-async function removeSlider(id) {
-    sliderImages = sliderImages.filter(s => s.id !== id);
-    await saveToStorage('slider_images', sliderImages);
-    renderAdminSlider();
-    showToast("Slide Removed");
+    
+    // Use the same uploadHeroImages function to maintain consistency
+    const heroInput = document.getElementById('heroImageUpload');
+    if (heroInput) {
+        // Transfer files to heroImageUpload and call uploadHeroImages
+        heroInput.files = input.files;
+        await uploadHeroImages();
+        // Note: uploadHeroImages will clear input.value for heroImageUpload
+    } else {
+        // Fallback if heroImageUpload not available
+        await uploadHeroImages();
+    }
 }
 
 async function updateSliderAnimation() {

@@ -248,10 +248,13 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Add New Slide</label>
+                        <label>Upload Hero Slider Images</label>
+                        <p style="color: var(--text-muted); margin-bottom: 15px; font-size: 0.9em;">Upload images that will appear in the hero slider on the public home page</p>
                         <div class="file-drop-zone">
-                            <input type="file" id="sliderFileInput" accept="image/*">
-                            <button class="btn btn-primary" onclick="addSliderImage()">Add Image</button>
+                            <input type="file" id="sliderFileInput" accept="image/*" multiple>
+                            <button class="btn btn-primary" onclick="uploadHeroImages()">
+                                <i class="fas fa-cloud-upload-alt"></i> Upload Hero Images
+                            </button>
                         </div>
                     </div>
                 </div>
