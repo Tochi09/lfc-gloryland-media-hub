@@ -1,6 +1,30 @@
 // ========== STATE MANAGEMENT ==========
 let currentUser = { level: 3, name: 'Admin', email: 'admin@lfcgl.com' };
 
+// Initialize Supabase client for storage uploads
+let supabase = null;
+
+const initSupabase = () => {
+    if (typeof window.supabase === 'undefined') {
+        console.error('Supabase not loaded. Make sure supabase-js is loaded.');
+        return;
+    }
+    
+    if (!SUPABASE_CONFIG || !SUPABASE_CONFIG.url || !SUPABASE_CONFIG.anonKey) {
+        console.error('Supabase config missing. Update supabase-config.js with your credentials.');
+        showToast('Supabase configuration missing - image upload disabled');
+        return;
+    }
+    
+    try {
+        supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+        console.log('Supabase client initialized for storage');
+    } catch (err) {
+        console.error('Error initializing Supabase:', err);
+        showToast('Error initializing file upload - ' + err.message);
+    }
+};
+
 let siteSettings = {
     brandName: 'LFC GLORYLAND',
     heroTitle: 'GLORYLAND<br>MEDIA HUB',
@@ -48,6 +72,9 @@ let editState = {
 // ========== INITIALIZATION ==========
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        // Initialize Supabase for storage
+        initSupabase();
+        
         // Load data with a timeout of 10 seconds
         const loadPromise = loadFromStorage();
         const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 10000));
@@ -439,40 +466,49 @@ async function uploadHeroImages() {
         
         for (let i = 0; i < input.files.length; i++) {
             const file = input.files[i];
-            const reader = new FileReader();
             
-            await new Promise((resolve, reject) => {
-                reader.onerror = () => {
-                    console.error('FileReader error:', reader.error);
-                    reject(reader.error);
-                };
+            try {
+                console.log('Processing file:', file.name, 'Size:', file.size);
                 
-                reader.onload = async function (e) {
-                    const imageData = e.target.result;
-                    console.log('Uploading image, size:', file.size, 'type:', file.type);
-                    
-                    const imageObj = { url: imageData };
-                    
-                    try {
-                        console.log('Sending to API...');
-                        const result = await api.createSliderImage(imageObj);
-                        console.log('API Response:', result);
-                        
-                        if (result && result.data && result.data.length > 0) {
-                            const savedImage = result.data[0];
-                            console.log('Image saved with ID:', savedImage.id);
-                        } else {
-                            console.warn('Unexpected response format');
-                        }
-                    } catch (err) {
-                        console.error('Error saving image:', err);
-                        showToast('Error saving image: ' + err.message);
-                        reject(err);
-                    }
-                    resolve();
-                };
-                reader.readAsDataURL(file);
-            });
+                // Create a unique filename
+                const timestamp = Date.now();
+                const filename = `slider-${timestamp}-${i}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+                const filepath = `slider-images/${filename}`;
+                
+                // Upload to Supabase Storage
+                console.log('Uploading to Supabase Storage:', filepath);
+                const { data: storageData, error: storageError } = await supabase.storage
+                    .from('media')
+                    .upload(filepath, file, {
+                        cacheControl: '3600',
+                        upsert: false
+                    });
+                
+                if (storageError) {
+                    console.error('Storage upload error:', storageError);
+                    throw storageError;
+                }
+                
+                console.log('File uploaded to storage:', storageData.path);
+                
+                // Get public URL
+                const { data: urlData } = supabase.storage
+                    .from('media')
+                    .getPublicUrl(storageData.path);
+                
+                const publicUrl = urlData.publicUrl;
+                console.log('Public URL:', publicUrl);
+                
+                // Save URL to database
+                console.log('Saving URL to database...');
+                const imageObj = { url: publicUrl };
+                const result = await api.createSliderImage(imageObj);
+                console.log('Image saved to database:', result);
+                
+            } catch (err) {
+                console.error('Error processing image:', err);
+                showToast('Error uploading ' + file.name + ': ' + err.message);
+            }
         }
         
         // Wait for database
