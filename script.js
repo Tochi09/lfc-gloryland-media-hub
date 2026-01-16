@@ -155,13 +155,17 @@ async function loadFromStorage() {
             console.log('Loading slider images...');
             const sliderResult = await api.getSliderImages();
             console.log('Slider images API response:', sliderResult);
-            if (sliderResult && sliderResult.data) {
+            if (sliderResult && sliderResult.data && sliderResult.data.length > 0) {
                 sliderImages = sliderResult.data;
-                console.log('Slider images loaded:', sliderImages.length, sliderImages);
+                console.log('Slider images loaded from API:', sliderImages.length);
             } else {
-                console.log('No slider data in response');
+                console.log('No slider images in database, keeping defaults');
+                // Keep the default placeholder images if no database images exist
             }
-        } catch (e) { console.error('Slider images error:', e); }
+        } catch (e) { 
+            console.error('Slider images error:', e);
+            console.log('Failed to load slider images from API, keeping defaults');
+        }
 
         // Load likes from localStorage (client-side only)
         likedItems = JSON.parse(localStorage.getItem('likedItems') || '{}');
@@ -1551,10 +1555,10 @@ async function addAnnouncement() {
         return showToast("Only Level 2+ can add announcements");
     }
     
-    const d = document.getElementById('annDate').value.trim();
-    const t = document.getElementById('annTitle').value.trim();
-    const c = document.getElementById('annContent').value.trim();
-    const h = document.getElementById('annHighlight').checked;
+    const d = document.getElementById('annDate')?.value.trim();
+    const t = document.getElementById('annTitle')?.value.trim();
+    const c = document.getElementById('annContent')?.value.trim();
+    const h = document.getElementById('annHighlight')?.checked || false;
     const imageInput = document.getElementById('annImageUpload');
 
     if (!d || !t) {
@@ -1574,14 +1578,14 @@ async function addAnnouncement() {
         renderAdminAnnouncements();
         renderPublicHome();
         showToast("Published");
-        document.getElementById('annDate').value = '';
-        document.getElementById('annTitle').value = '';
-        document.getElementById('annContent').value = '';
-        document.getElementById('annHighlight').checked = false;
-        document.getElementById('annImageUpload').value = '';
+        if (document.getElementById('annDate')) document.getElementById('annDate').value = '';
+        if (document.getElementById('annTitle')) document.getElementById('annTitle').value = '';
+        if (document.getElementById('annContent')) document.getElementById('annContent').value = '';
+        if (document.getElementById('annHighlight')) document.getElementById('annHighlight').checked = false;
+        if (document.getElementById('annImageUpload')) document.getElementById('annImageUpload').value = '';
     };
 
-    if (imageInput.files.length > 0) {
+    if (imageInput && imageInput.files && imageInput.files.length > 0) {
         const reader = new FileReader();
         reader.onload = async function(e) {
             await processAnnouncement(e.target.result);
