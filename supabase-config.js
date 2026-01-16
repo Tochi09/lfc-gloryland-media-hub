@@ -18,10 +18,10 @@
 // Step 3: Fill in your credentials below
 const SUPABASE_CONFIG = {
     // Replace with your actual Supabase Project URL
-    url: 'YOUR_SUPABASE_PROJECT_URL',
+    url: 'https://qfozdqasqbvjccuxncmk.supabase.co',
     
     // Replace with your actual Supabase anon key
-    anonKey: 'YOUR_SUPABASE_ANON_KEY'
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmb3pkcWFzcWJ2amNjdXhuY21rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0Nzk5MTEsImV4cCI6MjA4NDA1NTkxMX0.FEhuGLLVfVMP7UNJbfCI7jb6uDjBHwADwb3aIdm4yu8'
 };
 
 // Example (DO NOT USE - for reference only):
