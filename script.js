@@ -167,8 +167,17 @@ async function loadFromStorage() {
             } else {
                 console.log('No slider images found in database, initializing defaults...');
                 await initializeDefaultSliderImages();
-                sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
-                console.log('Using defaults:', sliderImages.length);
+                
+                // Wait and reload from API to get the newly saved defaults
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                const reloadResult = await api.getSliderImages();
+                if (reloadResult && reloadResult.data && reloadResult.data.length > 0) {
+                    sliderImages = reloadResult.data;
+                    console.log('Loaded default images from API after initialization:', sliderImages.length);
+                } else {
+                    sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
+                    console.log('Fallback to defaults in memory');
+                }
             }
         } catch (e) { 
             console.error('Slider images error:', e);
@@ -287,8 +296,21 @@ function switchAdminSection(sectionId, btn) {
                     sliderImages = sliderResult.data;
                     console.log('Loaded images from API:', sliderImages.length);
                 } else {
-                    console.log('No images found in database');
-                    sliderImages = [];
+                    console.log('No images found, initializing defaults if needed...');
+                    if (DEFAULT_SLIDER_IMAGES && DEFAULT_SLIDER_IMAGES.length > 0) {
+                        await initializeDefaultSliderImages();
+                        // Wait and reload
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        const reloadResult = await api.getSliderImages();
+                        if (reloadResult && reloadResult.data && reloadResult.data.length > 0) {
+                            sliderImages = reloadResult.data;
+                            console.log('Loaded default images:', sliderImages.length);
+                        } else {
+                            sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
+                        }
+                    } else {
+                        sliderImages = [];
+                    }
                 }
             } catch (e) {
                 console.log('Error loading images:', e);
@@ -345,8 +367,23 @@ async function loadBrandingForm() {
             sliderImages = result.data;
             console.log('Loaded', sliderImages.length, 'images from API');
         } else {
-            console.log('No images in database');
-            sliderImages = [];
+            console.log('No images in database, checking if we need to initialize defaults...');
+            // If empty and we have DEFAULT_SLIDER_IMAGES, initialize them
+            if (DEFAULT_SLIDER_IMAGES && DEFAULT_SLIDER_IMAGES.length > 0) {
+                await initializeDefaultSliderImages();
+                // Wait and reload
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                const reloadResult = await api.getSliderImages();
+                if (reloadResult && reloadResult.data && reloadResult.data.length > 0) {
+                    sliderImages = reloadResult.data;
+                    console.log('Loaded default images after initialization:', sliderImages.length);
+                } else {
+                    sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
+                    console.log('Using defaults in memory');
+                }
+            } else {
+                sliderImages = [];
+            }
         }
     } catch (e) {
         console.error('Error reloading images:', e);
