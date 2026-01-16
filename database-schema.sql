@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS files (
 
 -- ========== ANNOUNCEMENTS TABLE ==========
 CREATE TABLE IF NOT EXISTS announcements (
-  id BIGINT PRIMARY KEY,
+  id BIGSERIAL PRIMARY KEY,
   title TEXT NOT NULL,
   content TEXT,
   image TEXT,
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS featured_media (
 
 -- ========== SLIDER IMAGES TABLE ==========
 CREATE TABLE IF NOT EXISTS slider_images (
-  id INTEGER PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   url TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT NOW()
 );
