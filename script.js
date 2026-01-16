@@ -246,8 +246,20 @@ function switchAdminSection(sectionId, btn) {
     
     // Refresh content when switching sections
     if (sectionId === 'branding') {
-        console.log('Switching to branding section, rendering hero images...');
-        renderHeroImagesList();
+        console.log('Switching to branding section, reloading and rendering hero images...');
+        // Reload hero images from API to ensure we have latest data
+        (async () => {
+            try {
+                const sliderResult = await api.getSliderImages();
+                if (sliderResult.data) {
+                    sliderImages = sliderResult.data;
+                    console.log('Hero images reloaded from API:', sliderImages.length);
+                }
+            } catch (e) {
+                console.log('Could not reload hero images:', e);
+            }
+            renderHeroImagesList();
+        })();
     } else if (sectionId === 'media') {
         resetAdminMediaView();
         renderAdminMedia();
