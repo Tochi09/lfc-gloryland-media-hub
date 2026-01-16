@@ -412,12 +412,13 @@ async function uploadHeroImages() {
     }
     
     const input = document.getElementById('heroImageUpload');
-    if (!input.files.length) {
+    if (!input || !input.files || !input.files.length) {
         return showToast("Please select images to upload");
     }
     
     try {
         const uploadedCount = input.files.length;
+        console.log('Starting upload of', uploadedCount, 'images');
         
         for (let i = 0; i < input.files.length; i++) {
             const file = input.files[i];
@@ -431,32 +432,24 @@ async function uploadHeroImages() {
                 
                 reader.onload = async function (e) {
                     const imageData = e.target.result;
-                    console.log('File size:', file.size, 'File type:', file.type);
-                    console.log('Base64 length:', imageData.length);
+                    console.log('Uploading image, size:', file.size, 'type:', file.type);
                     
-                    const imageObj = { 
-                        url: imageData
-                    };
+                    const imageObj = { url: imageData };
                     
-                    // Save to API
                     try {
-                        console.log('Uploading image to API...');
+                        console.log('Sending to API...');
                         const result = await api.createSliderImage(imageObj);
-                        console.log('Slider image API response:', result);
+                        console.log('API Response:', result);
                         
                         if (result && result.data && result.data.length > 0) {
                             const savedImage = result.data[0];
-                            console.log('Image saved successfully with ID:', savedImage.id);
-                            if (!sliderImages.find(img => img.id === savedImage.id)) {
-                                sliderImages.push(savedImage);
-                            }
+                            console.log('Image saved with ID:', savedImage.id);
                         } else {
-                            console.warn('Unexpected API response format:', result);
-                            sliderImages.push(imageObj);
+                            console.warn('Unexpected response format');
                         }
                     } catch (err) {
-                        console.error('Error saving slider image:', err);
-                        showToast('Error saving slider image: ' + err.message);
+                        console.error('Error saving image:', err);
+                        showToast('Error saving image: ' + err.message);
                         reject(err);
                     }
                     resolve();
@@ -465,22 +458,31 @@ async function uploadHeroImages() {
             });
         }
         
-        // Wait a moment for database to settle
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Wait for database
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Reload from API to ensure consistency
-        console.log('Reloading slider images from API...');
+        // Reload from API to get all current images
+        console.log('Reloading all images from API...');
         const sliderResult = await api.getSliderImages();
-        console.log('Reload result:', sliderResult);
-        if (sliderResult && sliderResult.data) {
+        console.log('API returned:', sliderResult);
+        
+        if (sliderResult && sliderResult.data && sliderResult.data.length > 0) {
             sliderImages = sliderResult.data;
-            console.log('Reloaded slider images count:', sliderImages.length);
+            console.log('Loaded', sliderImages.length, 'images from API');
+        } else {
+            // Keep defaults if API returns empty
+            sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
+            console.log('API empty, using defaults');
         }
         
-        renderHeroImagesList();
-        renderAdminSlider();
+        // Update ALL displays
+        console.log('Updating all displays...');
+        renderHeroImagesList();  // Update branding tab
+        renderAdminSlider();      // Update hero slider tab
+        startHeroSlider();        // Update public page slider
+        
         showToast(`${uploadedCount} hero image(s) uploaded!`);
-        input.value = '';
+        if (input) input.value = '';
     } catch (err) {
         console.error('Error uploading hero images:', err);
         showToast("Error uploading hero images: " + err.message);
