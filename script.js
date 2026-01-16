@@ -30,18 +30,9 @@ let files = [];
 let featuredMedia = [];
 let announcements = [];
 let likedItems = JSON.parse(localStorage.getItem('likedItems') || '{}');
-let sliderImages = [
-    { id: 1, url: "https://images.unsplash.com/photo-1438232992991-995b7058bbb3?q=80&w=2073" },
-    { id: 2, url: "https://images.unsplash.com/photo-1543791959-12b3f543282a?q=80&w=2070" }
-];
+let sliderImages = [];
 let staffMembers = [];
 let sliderAnimation = 'fade';
-
-// Default slider images - always available as fallback
-const DEFAULT_SLIDER_IMAGES = [
-    { id: 1, url: "https://images.unsplash.com/photo-1438232992991-995b7058bbb3?q=80&w=2073" },
-    { id: 2, url: "https://images.unsplash.com/photo-1543791959-12b3f543282a?q=80&w=2070" }
-];
 
 let navState = {
     view: 'categories',
@@ -165,23 +156,12 @@ async function loadFromStorage() {
                 sliderImages = sliderResult.data;
                 console.log('Slider images loaded from API:', sliderImages.length);
             } else {
-                console.log('No slider images found in database, initializing defaults...');
-                await initializeDefaultSliderImages();
-                
-                // Wait and reload from API to get the newly saved defaults
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                const reloadResult = await api.getSliderImages();
-                if (reloadResult && reloadResult.data && reloadResult.data.length > 0) {
-                    sliderImages = reloadResult.data;
-                    console.log('Loaded default images from API after initialization:', sliderImages.length);
-                } else {
-                    sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
-                    console.log('Fallback to defaults in memory');
-                }
+                sliderImages = [];
+                console.log('No slider images in database');
             }
         } catch (e) { 
             console.error('Slider images error:', e);
-            sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
+            sliderImages = [];
         }
 
         // Load likes from localStorage (client-side only)
@@ -194,23 +174,6 @@ async function loadFromStorage() {
 }
 
 // Initialize default slider images in database
-async function initializeDefaultSliderImages() {
-    try {
-        console.log('Initializing default slider images in database...');
-        for (const defaultImg of DEFAULT_SLIDER_IMAGES) {
-            try {
-                await api.createSliderImage(defaultImg);
-                console.log('Saved default image to database');
-            } catch (err) {
-                console.error('Error saving default image:', err);
-                // Continue with next image even if one fails
-            }
-        }
-    } catch (err) {
-        console.error('Error initializing default images:', err);
-    }
-}
-
 async function saveToStorage(key, data) {
     try {
         if (key === 'site_settings') {
@@ -296,21 +259,8 @@ function switchAdminSection(sectionId, btn) {
                     sliderImages = sliderResult.data;
                     console.log('Loaded images from API:', sliderImages.length);
                 } else {
-                    console.log('No images found, initializing defaults if needed...');
-                    if (DEFAULT_SLIDER_IMAGES && DEFAULT_SLIDER_IMAGES.length > 0) {
-                        await initializeDefaultSliderImages();
-                        // Wait and reload
-                        await new Promise(resolve => setTimeout(resolve, 1500));
-                        const reloadResult = await api.getSliderImages();
-                        if (reloadResult && reloadResult.data && reloadResult.data.length > 0) {
-                            sliderImages = reloadResult.data;
-                            console.log('Loaded default images:', sliderImages.length);
-                        } else {
-                            sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
-                        }
-                    } else {
-                        sliderImages = [];
-                    }
+                    console.log('No images found in database');
+                    sliderImages = [];
                 }
             } catch (e) {
                 console.log('Error loading images:', e);
@@ -367,23 +317,8 @@ async function loadBrandingForm() {
             sliderImages = result.data;
             console.log('Loaded', sliderImages.length, 'images from API');
         } else {
-            console.log('No images in database, checking if we need to initialize defaults...');
-            // If empty and we have DEFAULT_SLIDER_IMAGES, initialize them
-            if (DEFAULT_SLIDER_IMAGES && DEFAULT_SLIDER_IMAGES.length > 0) {
-                await initializeDefaultSliderImages();
-                // Wait and reload
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                const reloadResult = await api.getSliderImages();
-                if (reloadResult && reloadResult.data && reloadResult.data.length > 0) {
-                    sliderImages = reloadResult.data;
-                    console.log('Loaded default images after initialization:', sliderImages.length);
-                } else {
-                    sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
-                    console.log('Using defaults in memory');
-                }
-            } else {
-                sliderImages = [];
-            }
+            console.log('No images in database');
+            sliderImages = [];
         }
     } catch (e) {
         console.error('Error reloading images:', e);
@@ -609,12 +544,8 @@ async function removeHeroImage(id) {
         
         // Update public hero section
         const publicHero = document.getElementById('publicHeroSlider');
-        if (publicHero) {
-            if (sliderImages && sliderImages.length > 0) {
-                publicHero.style.backgroundImage = `url('${sliderImages[0].url}')`;
-            } else {
-                publicHero.style.backgroundImage = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-            }
+        if (publicHero && sliderImages && sliderImages.length > 0) {
+            publicHero.style.backgroundImage = `url('${sliderImages[0].url}')`;
             console.log('Updated public hero slider background after deletion');
         }
         
@@ -1548,17 +1479,12 @@ async function likeMedia(id, type = 'file') {
 // ========== SLIDER ==========
 function startHeroSlider() {
     const container = document.getElementById('publicHeroSlider');
-    if (!container) return;
+    if (!container || !sliderImages || sliderImages.length === 0) return;
     
     let idx = 0;
 
     function cycle() {
-        if (!sliderImages || sliderImages.length === 0) {
-            // If no images, show placeholder or default
-            container.style.backgroundImage = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-            return;
-        }
-        
+        if (!sliderImages || sliderImages.length === 0) return;
         idx = (idx + 1) % sliderImages.length;
         
         if (sliderAnimation === 'fade') {
@@ -1587,8 +1513,6 @@ function startHeroSlider() {
     // Set initial image
     if (sliderImages && sliderImages.length > 0) {
         container.style.backgroundImage = `url('${sliderImages[0].url}')`;
-    } else {
-        container.style.backgroundImage = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
     }
     
     // Cycle every 5 seconds if there are multiple images
