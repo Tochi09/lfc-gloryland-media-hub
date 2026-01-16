@@ -487,9 +487,8 @@ async function uploadHeroImages() {
             sliderImages = sliderResult.data;
             console.log('Loaded', sliderImages.length, 'images from API');
         } else {
-            // Keep defaults if API returns empty
-            sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
-            console.log('API empty, using defaults');
+            sliderImages = [];
+            console.log('No images in database');
         }
         
         // Update ALL displays
@@ -525,37 +524,55 @@ async function removeHeroImage(id) {
     try {
         console.log('Removing hero image with ID:', id);
         await api.deleteSliderImage(id);
+        console.log('Image deleted successfully from database');
         
-        // Remove from local state
-        sliderImages = sliderImages.filter(s => s.id !== id);
+        // Wait a moment for database to process
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         // Reload from API to ensure consistency
+        console.log('Reloading slider images from API...');
         const sliderResult = await api.getSliderImages();
-        if (sliderResult.data) {
+        console.log('API response:', sliderResult);
+        
+        if (sliderResult && sliderResult.data) {
             sliderImages = sliderResult.data;
-            console.log('Reloaded slider images after deletion:', sliderImages);
-        } else if (sliderResult.data && sliderResult.data.length === 0) {
+            console.log('Reloaded', sliderImages.length, 'images from API');
+        } else {
             sliderImages = [];
+            console.log('No images in database');
         }
         
         // Update all displays
-        renderHeroImagesList();
-        renderAdminSlider();
+        console.log('Updating all displays...');
+        renderHeroImagesList();     // Update branding tab
+        renderAdminSlider();        // Update hero slider tab
         
         // Update public hero section
         const publicHero = document.getElementById('publicHeroSlider');
         if (publicHero && sliderImages && sliderImages.length > 0) {
             publicHero.style.backgroundImage = `url('${sliderImages[0].url}')`;
-            console.log('Updated public hero slider background after deletion');
+            console.log('Updated public hero slider to first remaining image');
+        } else if (publicHero) {
+            console.log('No images left, clearing public hero');
         }
         
-        showToast("Hero image removed");
+        showToast("Hero image removed successfully");
     } catch (err) {
         console.error('Error removing slider image:', err);
-        showToast("Error removing hero image");
+        showToast("Error removing hero image: " + err.message);
         // Reload from API to get correct state
-        await loadFromStorage();
-        renderHeroImagesList();
+        try {
+            const sliderResult = await api.getSliderImages();
+            if (sliderResult && sliderResult.data) {
+                sliderImages = sliderResult.data;
+            } else {
+                sliderImages = [];
+            }
+            renderHeroImagesList();
+            renderAdminSlider();
+        } catch (reloadErr) {
+            console.error('Error reloading after failed deletion:', reloadErr);
+        }
     }
 }
 
