@@ -165,6 +165,8 @@ async function loadFromStorage() {
                 sliderImages = sliderResult.data;
                 console.log('Slider images loaded from API:', sliderImages.length);
             } else {
+                console.log('No slider images found in database, initializing defaults...');
+                await initializeDefaultSliderImages();
                 sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
                 console.log('Using defaults:', sliderImages.length);
             }
@@ -179,6 +181,24 @@ async function loadFromStorage() {
 
     } catch (err) {
         console.log('Error loading data:', err);
+    }
+}
+
+// Initialize default slider images in database
+async function initializeDefaultSliderImages() {
+    try {
+        console.log('Initializing default slider images in database...');
+        for (const defaultImg of DEFAULT_SLIDER_IMAGES) {
+            try {
+                await api.createSliderImage(defaultImg);
+                console.log('Saved default image to database');
+            } catch (err) {
+                console.error('Error saving default image:', err);
+                // Continue with next image even if one fails
+            }
+        }
+    } catch (err) {
+        console.error('Error initializing default images:', err);
     }
 }
 
@@ -267,12 +287,12 @@ function switchAdminSection(sectionId, btn) {
                     sliderImages = sliderResult.data;
                     console.log('Loaded images from API:', sliderImages.length);
                 } else {
-                    sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
-                    console.log('Using defaults');
+                    console.log('No images found in database');
+                    sliderImages = [];
                 }
             } catch (e) {
                 console.log('Error loading images:', e);
-                sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
+                sliderImages = [];
             }
             renderHeroImagesList();
         })();
@@ -325,12 +345,12 @@ async function loadBrandingForm() {
             sliderImages = result.data;
             console.log('Loaded', sliderImages.length, 'images from API');
         } else {
-            sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
-            console.log('API empty, using defaults');
+            console.log('No images in database');
+            sliderImages = [];
         }
     } catch (e) {
         console.error('Error reloading images:', e);
-        sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
+        sliderImages = [];
     }
     
     document.getElementById('brandName').value = siteSettings.brandName;
