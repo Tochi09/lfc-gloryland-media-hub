@@ -2,7 +2,7 @@
 // This module handles all API calls to the backend
 
 class APIClient {
-  constructor(baseUrl = '/api') {
+  constructor(baseUrl = '/.netlify/functions') {
     this.baseUrl = baseUrl;
     this.token = null;
     this.userLevel = 0;
