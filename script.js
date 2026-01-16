@@ -1733,7 +1733,13 @@ function updateLikesStats() {
 }
 
 function initChart() {
-    const ctx = document.getElementById('trafficChart').getContext('2d');
+    const chartElement = document.getElementById('trafficChart');
+    if (!chartElement) {
+        console.log('Chart element not found (not on admin page)');
+        return;
+    }
+    
+    const ctx = chartElement.getContext('2d');
     new Chart(ctx, {
         type: 'line',
         data: {
