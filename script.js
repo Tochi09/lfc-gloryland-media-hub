@@ -65,7 +65,27 @@ async function loadFromStorage() {
         // Load site settings from API
         try {
             const settingsResult = await api.getSettings();
-            if (settingsResult.data) siteSettings = settingsResult.data;
+            if (settingsResult.data) {
+                const data = settingsResult.data;
+                // Convert snake_case from database to camelCase for JavaScript
+                siteSettings = {
+                    id: data.id,
+                    brandName: data.brand_name,
+                    heroTitle: data.hero_title,
+                    heroSubtitle: data.hero_subtitle,
+                    footerDescription: data.footer_description,
+                    footerAddress: data.footer_address,
+                    footerPhone: data.footer_phone,
+                    footerEmail: data.footer_email,
+                    footerCopyright: data.footer_copyright,
+                    socialLinks: {
+                        facebook: data.facebook_link,
+                        twitter: data.twitter_link,
+                        instagram: data.instagram_link,
+                        youtube: data.youtube_link
+                    }
+                };
+            }
         } catch (e) { console.log('Settings not available'); }
 
         // Load categories from API
@@ -246,11 +266,30 @@ async function saveBranding() {
     siteSettings.socialLinks.youtube = document.getElementById('ytLink').value;
 
     try {
-        await api.updateSettings(siteSettings);
+        // Convert camelCase to snake_case for database
+        const settingsData = {
+            id: siteSettings.id || 1,
+            brand_name: siteSettings.brandName,
+            hero_title: siteSettings.heroTitle,
+            hero_subtitle: siteSettings.heroSubtitle,
+            footer_description: siteSettings.footerDescription,
+            footer_address: siteSettings.footerAddress,
+            footer_phone: siteSettings.footerPhone,
+            footer_email: siteSettings.footerEmail,
+            footer_copyright: siteSettings.footerCopyright,
+            facebook_link: siteSettings.socialLinks.facebook,
+            twitter_link: siteSettings.socialLinks.twitter,
+            instagram_link: siteSettings.socialLinks.instagram,
+            youtube_link: siteSettings.socialLinks.youtube
+        };
+        
+        const result = await api.updateSettings(settingsData);
+        console.log('Settings saved:', result);
         applyBranding();
         showToast("Branding updated successfully!");
     } catch (err) {
-        showToast("Error updating branding");
+        console.error('Error updating branding:', err);
+        showToast("Error updating branding: " + (err.message || 'Unknown error'));
     }
 }
 
@@ -298,17 +337,21 @@ async function uploadHeroImages() {
             await new Promise((resolve) => {
                 reader.onload = async function (e) {
                     const imageObj = { 
-                        id: 'slider_' + Date.now() + i, 
                         url: e.target.result 
                     };
-                    sliderImages.push(imageObj);
                     
                     // Save to API
                     try {
-                        await api.createSliderImage(imageObj);
+                        const result = await api.createSliderImage(imageObj);
+                        // Add the returned object with ID from database
+                        if (result.data && result.data.length > 0) {
+                            sliderImages.push(result.data[0]);
+                        } else {
+                            sliderImages.push(imageObj);
+                        }
                     } catch (err) {
                         console.error('Error saving slider image:', err);
-                        sliderImages = sliderImages.filter(s => s.id !== imageObj.id);
+                        showToast('Error saving slider image');
                         throw err;
                     }
                     resolve();
@@ -1113,10 +1156,23 @@ async function saveFeaturedItem() {
                 upload_date: new Date().toISOString()
             };
 
-            featuredMedia.push(item);
-            
             try {
-                await api.createFeaturedMedia(item);
+                const result = await api.createFeaturedMedia(item);
+                console.log('Featured item saved:', result);
+                
+                // Update with returned data if available
+                if (result.data && result.data.length > 0) {
+                    // Find and update the item in the array
+                    const index = featuredMedia.findIndex(f => f.id === itemId);
+                    if (index !== -1) {
+                        featuredMedia[index] = result.data[0];
+                    } else {
+                        featuredMedia.push(result.data[0]);
+                    }
+                } else {
+                    featuredMedia.push(item);
+                }
+                
                 renderAdminFeatured();
                 renderFeaturedMedia();
                 showToast("Added to featured!");
@@ -1124,7 +1180,7 @@ async function saveFeaturedItem() {
             } catch (err) {
                 console.error('Error saving featured item:', err);
                 featuredMedia = featuredMedia.filter(f => f.id !== itemId);
-                showToast("Error saving featured item");
+                showToast("Error saving featured item: " + (err.message || 'Unknown error'));
                 // Reload from API
                 await loadFromStorage();
                 renderAdminFeatured();
