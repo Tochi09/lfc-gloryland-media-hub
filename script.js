@@ -2,7 +2,7 @@
 let currentUser = { level: 3, name: 'Admin', email: 'admin@lfcgl.com' };
 
 // Initialize Supabase client for storage uploads
-let supabase = null;
+let supabaseClient = null;
 
 const initSupabase = () => {
     if (typeof window.supabase === 'undefined') {
@@ -17,7 +17,7 @@ const initSupabase = () => {
     }
     
     try {
-        supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+        supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
         console.log('Supabase client initialized for storage');
     } catch (err) {
         console.error('Error initializing Supabase:', err);
@@ -470,6 +470,11 @@ async function uploadHeroImages() {
             try {
                 console.log('Processing file:', file.name, 'Size:', file.size);
                 
+                // Check if Supabase is initialized
+                if (!supabaseClient) {
+                    throw new Error('Supabase client not initialized. Check supabase-config.js');
+                }
+                
                 // Create a unique filename
                 const timestamp = Date.now();
                 const filename = `slider-${timestamp}-${i}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
@@ -477,7 +482,7 @@ async function uploadHeroImages() {
                 
                 // Upload to Supabase Storage
                 console.log('Uploading to Supabase Storage:', filepath);
-                const { data: storageData, error: storageError } = await supabase.storage
+                const { data: storageData, error: storageError } = await supabaseClient.storage
                     .from('media')
                     .upload(filepath, file, {
                         cacheControl: '3600',
@@ -492,7 +497,7 @@ async function uploadHeroImages() {
                 console.log('File uploaded to storage:', storageData.path);
                 
                 // Get public URL
-                const { data: urlData } = supabase.storage
+                const { data: urlData } = supabaseClient.storage
                     .from('media')
                     .getPublicUrl(storageData.path);
                 
