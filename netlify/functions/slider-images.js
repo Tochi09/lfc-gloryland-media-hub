@@ -56,7 +56,7 @@ exports.handler = async (event, context) => {
       
       // If it's a base64 data URL, upload to Supabase Storage first
       if (body.url && body.url.startsWith('data:')) {
-        console.log('Detected base64 data URL, uploading to storage...');
+        console.log('Detected base64 data URL, attempting to upload to storage...');
         
         // Extract file type and data from data URL
         const matches = body.url.match(/^data:([^;]+);base64,(.+)$/) || [];
@@ -76,37 +76,47 @@ exports.handler = async (event, context) => {
         const fileExt = mimeType.split('/')[1] || 'jpg';
         const filename = `slider-${timestamp}-${random}.${fileExt}`;
         
-        console.log('Uploading to storage:', filename, 'size:', buffer.length, 'bytes');
+        console.log('File size:', buffer.length, 'bytes');
         
-        // Upload to Supabase Storage
-        const { data: uploadData, error: uploadError } = await supabase
-          .storage
-          .from('slider-images')
-          .upload(filename, buffer, {
-            contentType: mimeType,
-            upsert: false
-          });
+        let publicUrl = null;
+        
+        // Try to upload to Supabase Storage
+        try {
+          console.log('Uploading to storage bucket: slider-images');
+          const { data: uploadData, error: uploadError } = await supabase
+            .storage
+            .from('slider-images')
+            .upload(filename, buffer, {
+              contentType: mimeType,
+              upsert: false
+            });
 
-        if (uploadError) {
-          console.error('Storage upload error:', uploadError);
-          throw new Error('Failed to upload image to storage: ' + uploadError.message);
+          if (uploadError) {
+            console.warn('Storage upload failed:', uploadError.message, '- will save base64 instead');
+          } else {
+            console.log('File uploaded to storage:', uploadData.path);
+            
+            // Get public URL
+            const { data: publicUrlData } = supabase
+              .storage
+              .from('slider-images')
+              .getPublicUrl(filename);
+            
+            publicUrl = publicUrlData.publicUrl;
+            console.log('Public URL obtained:', publicUrl);
+          }
+        } catch (storageError) {
+          console.warn('Storage error (non-critical):', storageError.message, '- will save base64 instead');
         }
         
-        console.log('File uploaded to storage:', uploadData.path);
-        
-        // Get public URL
-        const { data: publicUrlData } = supabase
-          .storage
-          .from('slider-images')
-          .getPublicUrl(filename);
-        
-        const publicUrl = publicUrlData.publicUrl;
-        console.log('Public URL:', publicUrl);
+        // If storage upload failed or no public URL, use the base64 directly as fallback
+        const urlToSave = publicUrl || body.url;
+        console.log('Saving to database, URL type:', publicUrl ? 'Storage URL' : 'Base64 data URL');
         
         // Save URL to database
         const { data, error } = await supabase
           .from('slider_images')
-          .insert([{ url: publicUrl }])
+          .insert([{ url: urlToSave }])
           .select();
 
         if (error) {
@@ -114,7 +124,7 @@ exports.handler = async (event, context) => {
           throw new Error('Failed to save to database: ' + error.message);
         }
         
-        console.log('Saved to database, returned', data.length, 'records');
+        console.log('Successfully saved to database');
         
         return {
           statusCode: 201,
