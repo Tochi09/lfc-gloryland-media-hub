@@ -37,6 +37,12 @@ let sliderImages = [
 let staffMembers = [];
 let sliderAnimation = 'fade';
 
+// Default slider images - always available as fallback
+const DEFAULT_SLIDER_IMAGES = [
+    { id: 1, url: "https://images.unsplash.com/photo-1438232992991-995b7058bbb3?q=80&w=2073" },
+    { id: 2, url: "https://images.unsplash.com/photo-1543791959-12b3f543282a?q=80&w=2070" }
+];
+
 let navState = {
     view: 'categories',
     currentCatId: null,
@@ -159,12 +165,12 @@ async function loadFromStorage() {
                 sliderImages = sliderResult.data;
                 console.log('Slider images loaded from API:', sliderImages.length);
             } else {
-                console.log('No slider images in database, keeping defaults');
-                // Keep the default placeholder images if no database images exist
+                sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
+                console.log('Using defaults:', sliderImages.length);
             }
         } catch (e) { 
             console.error('Slider images error:', e);
-            console.log('Failed to load slider images from API, keeping defaults');
+            sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
         }
 
         // Load likes from localStorage (client-side only)
@@ -253,17 +259,20 @@ function switchAdminSection(sectionId, btn) {
     
     // Refresh content when switching sections
     if (sectionId === 'branding') {
-        console.log('Switching to branding section, reloading and rendering hero images...');
-        // Reload hero images from API to ensure we have latest data
+        console.log('Switching to branding, loading hero images...');
         (async () => {
             try {
                 const sliderResult = await api.getSliderImages();
-                if (sliderResult.data) {
+                if (sliderResult && sliderResult.data && sliderResult.data.length > 0) {
                     sliderImages = sliderResult.data;
-                    console.log('Hero images reloaded from API:', sliderImages.length);
+                    console.log('Loaded images from API:', sliderImages.length);
+                } else {
+                    sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
+                    console.log('Using defaults');
                 }
             } catch (e) {
-                console.log('Could not reload hero images:', e);
+                console.log('Error loading images:', e);
+                sliderImages = JSON.parse(JSON.stringify(DEFAULT_SLIDER_IMAGES));
             }
             renderHeroImagesList();
         })();
