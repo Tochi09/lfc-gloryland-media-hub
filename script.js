@@ -50,7 +50,15 @@ let editState = {
 
 // ========== INITIALIZATION ==========
 document.addEventListener('DOMContentLoaded', async () => {
-    await loadFromStorage();
+    try {
+        // Load data with a timeout of 10 seconds
+        const loadPromise = loadFromStorage();
+        const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 10000));
+        await Promise.race([loadPromise, timeoutPromise]);
+    } catch (err) {
+        console.error('Error during initialization:', err);
+    }
+    
     showPublic();
     initChart();
     applyBranding();
@@ -62,8 +70,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ========== STORAGE FUNCTIONS ==========
 async function loadFromStorage() {
     try {
+        console.log('Starting data load from API...');
+        
         // Load site settings from API
         try {
+            console.log('Loading settings...');
             const settingsResult = await api.getSettings();
             if (settingsResult.data) {
                 const data = settingsResult.data;
@@ -85,47 +96,73 @@ async function loadFromStorage() {
                         youtube: data.youtube_link
                     }
                 };
+                console.log('Settings loaded:', siteSettings);
             }
-        } catch (e) { console.log('Settings not available'); }
+        } catch (e) { console.log('Settings not available', e); }
 
         // Load categories from API
         try {
+            console.log('Loading categories...');
             const catResult = await api.getCategories();
-            if (catResult.data) categories = catResult.data;
-        } catch (e) { console.log('Categories not available'); }
+            if (catResult.data) {
+                categories = catResult.data;
+                console.log('Categories loaded:', categories.length);
+            }
+        } catch (e) { console.log('Categories not available', e); }
 
         // Load folders from API
         try {
+            console.log('Loading folders...');
             const folResult = await api.getFolders();
-            if (folResult.data) folders = folResult.data;
-        } catch (e) { console.log('Folders not available'); }
+            if (folResult.data) {
+                folders = folResult.data;
+                console.log('Folders loaded:', folders.length);
+            }
+        } catch (e) { console.log('Folders not available', e); }
 
         // Load files from API
         try {
+            console.log('Loading files...');
             const fileResult = await api.getFiles();
-            if (fileResult.data) files = fileResult.data;
-        } catch (e) { console.log('Files not available'); }
+            if (fileResult.data) {
+                files = fileResult.data;
+                console.log('Files loaded:', files.length);
+            }
+        } catch (e) { console.log('Files not available', e); }
 
         // Load announcements from API
         try {
+            console.log('Loading announcements...');
             const annResult = await api.getAnnouncements();
-            if (annResult.data) announcements = annResult.data;
-        } catch (e) { console.log('Announcements not available'); }
+            if (annResult.data) {
+                announcements = annResult.data;
+                console.log('Announcements loaded:', announcements.length);
+            }
+        } catch (e) { console.log('Announcements not available', e); }
 
         // Load featured media from API
         try {
+            console.log('Loading featured media...');
             const featResult = await api.getFeaturedMedia();
-            if (featResult.data) featuredMedia = featResult.data;
-        } catch (e) { console.log('Featured media not available'); }
+            if (featResult.data) {
+                featuredMedia = featResult.data;
+                console.log('Featured media loaded:', featuredMedia.length);
+            }
+        } catch (e) { console.log('Featured media not available', e); }
 
         // Load slider images from API
         try {
+            console.log('Loading slider images...');
             const sliderResult = await api.getSliderImages();
-            if (sliderResult.data) sliderImages = sliderResult.data;
-        } catch (e) { console.log('Slider images not available'); }
+            if (sliderResult.data) {
+                sliderImages = sliderResult.data;
+                console.log('Slider images loaded:', sliderImages.length);
+            }
+        } catch (e) { console.log('Slider images not available', e); }
 
         // Load likes from localStorage (client-side only)
         likedItems = JSON.parse(localStorage.getItem('likedItems') || '{}');
+        console.log('Data load complete!');
 
     } catch (err) {
         console.log('Error loading data:', err);
