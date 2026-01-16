@@ -282,6 +282,9 @@ function loadBrandingForm() {
     document.getElementById('twLink').value = siteSettings.socialLinks.twitter;
     document.getElementById('igLink').value = siteSettings.socialLinks.instagram;
     document.getElementById('ytLink').value = siteSettings.socialLinks.youtube;
+    
+    // Render hero images list
+    renderHeroImagesList();
 }
 
 async function saveBranding() {
@@ -367,6 +370,8 @@ async function uploadHeroImages() {
     }
     
     try {
+        const uploadedCount = input.files.length;
+        
         for (let i = 0; i < input.files.length; i++) {
             const file = input.files[i];
             const reader = new FileReader();
@@ -380,10 +385,17 @@ async function uploadHeroImages() {
                     // Save to API
                     try {
                         const result = await api.createSliderImage(imageObj);
+                        console.log('Slider image API response:', result);
+                        
                         // Add the returned object with ID from database
                         if (result.data && result.data.length > 0) {
-                            sliderImages.push(result.data[0]);
+                            const savedImage = result.data[0];
+                            // Check if not already in array
+                            if (!sliderImages.find(img => img.id === savedImage.id)) {
+                                sliderImages.push(savedImage);
+                            }
                         } else {
+                            // Fallback if API doesn't return the data
                             sliderImages.push(imageObj);
                         }
                     } catch (err) {
@@ -397,11 +409,19 @@ async function uploadHeroImages() {
             });
         }
         
+        // Reload from API to ensure consistency
+        const sliderResult = await api.getSliderImages();
+        if (sliderResult.data) {
+            sliderImages = sliderResult.data;
+            console.log('Reloaded slider images from API:', sliderImages);
+        }
+        
         renderHeroImagesList();
         renderAdminSlider();
-        showToast(`${input.files.length} hero image(s) uploaded!`);
+        showToast(`${uploadedCount} hero image(s) uploaded!`);
         input.value = '';
     } catch (err) {
+        console.error('Error uploading hero images:', err);
         showToast("Error uploading hero images");
         // Reload from API to get correct state
         await loadFromStorage();
@@ -417,8 +437,19 @@ async function removeHeroImage(id) {
     if (!confirm("Remove this hero image?")) return;
     
     try {
-        sliderImages = sliderImages.filter(s => s.id !== id);
+        console.log('Removing hero image with ID:', id);
         await api.deleteSliderImage(id);
+        
+        // Remove from local state
+        sliderImages = sliderImages.filter(s => s.id !== id);
+        
+        // Reload from API to ensure consistency
+        const sliderResult = await api.getSliderImages();
+        if (sliderResult.data) {
+            sliderImages = sliderResult.data;
+            console.log('Reloaded slider images after deletion:', sliderImages);
+        }
+        
         renderHeroImagesList();
         renderAdminSlider();
         showToast("Hero image removed");
